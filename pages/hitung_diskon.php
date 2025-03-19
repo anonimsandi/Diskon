@@ -1,59 +1,62 @@
 <?php
-// Memanggil file koneksi
+session_start(); // Mulai session
 require '../config/connection.php';
-
-// Memanggil header
+require '../includes/functions.php';
 include '../includes/header.php';
 
 // Proses perhitungan diskon
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $harga = $_POST['harga'];
+    $id_barang = $_POST['id_barang'];
     $diskon = $_POST['diskon'];
+    $query = "INSERT INTO transaksi (tanggal, total) VALUES (NOW(), $subtotal)";
 
     // Validasi input
-    if (is_numeric($harga) && is_numeric($diskon)) {
-        $total_diskon = $harga * ($diskon / 100);
-        $total_harga = $harga - $total_diskon;
-        $hasil = [
-            'total_diskon' => $total_diskon,
-            'total_harga' => $total_harga
+    if (validasiAngka($id_barang) && validasiAngka($diskon)) {
+        // Simpan data diskon ke session
+        $_SESSION['diskon'] = [
+            'id_barang' => $id_barang,
+            'diskon' => $diskon
         ];
+
+        // Redirect ke halaman transaksi
+        header("Location: transaksi.php");
+        exit();
     } else {
-        $error = "Input tidak valid! Harap masukkan angka.";
+        echo tampilkanAlert("Input tidak valid!", "danger");
     }
 }
 ?>
 
-<div class="container mt-5">
-    <h1 class="text-center">Hitung Diskon</h1>
-    <form method="post" class="mt-4">
-        <div class="mb-3">
-            <label for="harga" class="form-label">Harga (Rp)</label>
-            <input type="text" class="form-control" id="harga" name="harga" required>
-        </div>
-        <div class="mb-3">
-            <label for="diskon" class="form-label">Diskon (%)</label>
-            <input type="text" class="form-control" id="diskon" name="diskon" required>
-        </div>
-        <button type="submit" class="btn btn-primary">Hitung</button>
-    </form>
-
-    <?php if (isset($hasil)): ?>
-    <div class="mt-4">
-        <h3>Hasil Perhitungan</h3>
-        <p>Total Diskon: Rp. <?= number_format($hasil['total_diskon'], 2) ?></p>
-        <p>Total Harga: Rp. <?= number_format($hasil['total_harga'], 2) ?></p>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hitung Diskon</title>
+    <link rel="stylesheet" href="../assets/css/bootstrap.min.css">
+</head>
+<body>
+    <div class="container mt-5">
+        <h1>Hitung Diskon</h1>
+        <form method="post" class="mt-4">
+            <div class="mb-3">
+                <label for="id_barang" class="form-label">Pilih Barang</label>
+                <select class="form-select" id="id_barang" name="id_barang" required>
+                    <option value="">-- Pilih Barang --</option>
+                    <?php
+                    $query = "SELECT * FROM barang";
+                    $result = $koneksi->query($query);
+                    while ($row = $result->fetch_assoc()): ?>
+                    <option value="<?= $row['id'] ?>"><?= $row['nama'] ?> (<?= formatRupiah($row['harga']) ?>)</option>
+                    <?php endwhile; ?>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label for="diskon" class="form-label">Diskon (%)</label>
+                <input type="number" class="form-control" id="diskon" name="diskon" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Hitung Diskon</button>
+        </form>
     </div>
-    <?php endif; ?>
-
-    <?php if (isset($error)): ?>
-    <div class="alert alert-danger mt-4">
-        <?= $error ?>
-    </div>
-    <?php endif; ?>
-</div>
-
-<?php
-// Memanggil footer
-include '../includes/footer.php';
-?>
+</body>
+</html>

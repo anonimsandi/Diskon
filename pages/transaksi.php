@@ -1,12 +1,11 @@
 <?php
-// Memanggil file koneksi dan fungsi
+session_start(); // Mulai session
 require '../config/connection.php';
 require '../includes/functions.php';
 include '../includes/header.php';
 
 // Inisialisasi variabel
 $pesan = '';
-$totalHarga = 0;
 
 // Ambil data barang dari database
 $dataBarang = getDataBarang();
@@ -23,24 +22,31 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $query = "SELECT harga FROM barang WHERE id = $id_barang";
         $result = $koneksi->query($query);
         $barang = $result->fetch_assoc();
-
-        //Hitung harga setelah diskon
         $harga = $barang['harga'];
-        $diskon = $barang['$diskon'];
-        $hargaSetelahDiskon = hitunghargaSetelahDiskon($harga,$diskon);
+
+        // Ambil diskon dari session (jika ada)
+        $diskon = 0;
+        if (isset($_SESSION['diskon']) && $_SESSION['diskon']['id_barang'] == $id_barang) {
+            $diskon = $_SESSION['diskon']['diskon'];
+        }
+
+        // Hitung harga setelah diskon
+        $hargaSetelahDiskon = hitungHargaSetelahDiskon($harga, $diskon);
 
         // Hitung subtotal
-        $subtotal = $harga * $jumlah;
+        $subtotal = $hargaSetelahDiskon * $jumlah;
 
         // Simpan transaksi ke database
         $query = "INSERT INTO transaksi (tanggal, total) VALUES (NOW(), $subtotal)";
-        if ($koneksi->query($query) === TRUE) {
-            $id_transaksi = $koneksi->insert_id; // Ambil ID transaksi yang baru dibuat
+        if ($koneksi->query($query)) {
+            $id_transaksi = $koneksi->insert_id;
 
-            // Simpan detail transaksi ke database
-            $query = "INSERT INTO detail_transaksi (id_transaksi, id_barang, jumlah, subtotal) VALUES ($id_transaksi, $id_barang, $jumlah, $subtotal)";
-            if ($koneksi->query($query) === TRUE) {
+            // Simpan detail transaksi ke database (termasuk diskon)
+            $query = "INSERT INTO detail_transaksi (id_transaksi, id_barang, jumlah, subtotal, diskon) 
+                      VALUES ($id_transaksi, $id_barang, $jumlah, $subtotal, $diskon)";
+            if ($koneksi->query($query)) {
                 $pesan = tampilkanAlert("Transaksi berhasil disimpan!", "success");
+                unset($_SESSION['diskon']); // Hapus session setelah transaksi selesai
             } else {
                 $pesan = tampilkanAlert("Gagal menyimpan detail transaksi.", "danger");
             }
@@ -52,8 +58,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     }
 }
 
-// Ambil data transaksi dari database
-$query = "SELECT t.id, t.tanggal, t.total, b.nama, dt.jumlah, dt.subtotal 
+// Ambil data transaksi dari database (ambil diskon dari detail_transaksi)
+$query = "SELECT t.id, t.tanggal, t.total, b.nama, dt.jumlah, dt.subtotal, dt.diskon, b.harga 
           FROM transaksi t
           JOIN detail_transaksi dt ON t.id = dt.id_transaksi
           JOIN barang b ON dt.id_barang = b.id
@@ -85,9 +91,7 @@ while ($row = $result->fetch_assoc()) {
                 <select class="form-select" id="id_barang" name="id_barang" required>
                     <option value="">-- Pilih Barang --</option>
                     <?php foreach ($dataBarang as $barang): ?>
-                    <option value="<?= $barang['id'] ?>" data-harga="<?= $barang['harga'] ?>" data-diskon="<?=$barang['diskon']?>">
-                        <?=$barang['nama']?>(<?= formatRupiah($barang['harga']) ?>) - Diskon : <?=$barang['diskon']?>%
-                    </option>
+                    <option value="<?= $barang['id'] ?>"><?= $barang['nama'] ?> (<?= formatRupiah($barang['harga']) ?>)</option>
                     <?php endforeach; ?>
                 </select>
             </div>
@@ -103,21 +107,25 @@ while ($row = $result->fetch_assoc()) {
         <table class="table table-bordered">
             <thead>
                 <tr>
-                    <th>ID Transaksi</th>
+                    <th>Id</th>
                     <th>Tanggal</th>
                     <th>Nama Barang</th>
                     <th>Jumlah</th>
+                    <th>Harga Asli</th>
+                    <th>Diskon</th>
                     <th>Subtotal</th>
                     <th>Total</th>
                 </tr>
             </thead>
             <tbody>
                 <?php foreach ($dataTransaksi as $transaksi): ?>
-                <tr>
+                    <tr>
                     <td><?= $transaksi['id'] ?></td>
                     <td><?= $transaksi['tanggal'] ?></td>
                     <td><?= $transaksi['nama'] ?></td>
                     <td><?= $transaksi['jumlah'] ?></td>
+                    <td><?= formatRupiah($transaksi['harga']) ?></td>
+                    <td><?= $transaksi['diskon'] ?>%</td> <!-- Diskont dari detail_transaksi -->
                     <td><?= formatRupiah($transaksi['subtotal']) ?></td>
                     <td><?= formatRupiah($transaksi['total']) ?></td>
                 </tr>
@@ -125,14 +133,5 @@ while ($row = $result->fetch_assoc()) {
             </tbody>
         </table>
     </div>
-    <script>
-        document.getElementById('id_barang').addEventListener('change', function() {
-            const selectedOption = this.options[this.selectedIndex];
-            const harga = parseFloat(selectedOption.getAttribute('data-harga'));
-            const diskon = parseFloat(selectedOption.getAttribute('data-diskon'));
-            const $hargaSetelahDiskon = harga - (harga - (diskon / 100));
-            alert('Harga setelah diskon : Rp ${hargaSetelahDiskon.toLocalString()}') ;
-        });
-    </script>
 </body>
 </html>

@@ -21,6 +21,11 @@ function tampilkanAlert($pesan, $tipe = 'success') {
     return "<div class='alert alert-$tipe'>$pesan</div>";
 }
 
+//Fungsi menghitung harga setelah diskon
+function hitungHargaSetelahDiskon($harga, $diskon) {
+    return $harga = $harga - ($harga * ($diskon / 100));
+}
+
 // Fungsi untuk memformat angka ke format mata uang Rupiah
 function formatRupiah($angka) {
     return "Rp. " . number_format($angka, 2, ',', '.');
@@ -32,11 +37,6 @@ function validasiAngka($input) {
         return true;
     }
     return false;
-}
-
-//Fungsi menghitung harga setelah diskon
-function hitunghargaSetelahDiskon($harga, $diskon) {
-    return $harga = $harga - ($harga * ($diskon / 100));
 }
 
 // Fungsi untuk mendapatkan data barang dari database
