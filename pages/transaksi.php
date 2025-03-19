@@ -23,7 +23,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $query = "SELECT harga FROM barang WHERE id = $id_barang";
         $result = $koneksi->query($query);
         $barang = $result->fetch_assoc();
+
+        //Hitung harga setelah diskon
         $harga = $barang['harga'];
+        $diskon = $barang['$diskon'];
+        $hargaSetelahDiskon = hitunghargaSetelahDiskon($harga,$diskon);
 
         // Hitung subtotal
         $subtotal = $harga * $jumlah;
@@ -81,7 +85,9 @@ while ($row = $result->fetch_assoc()) {
                 <select class="form-select" id="id_barang" name="id_barang" required>
                     <option value="">-- Pilih Barang --</option>
                     <?php foreach ($dataBarang as $barang): ?>
-                    <option value="<?= $barang['id'] ?>"><?= $barang['nama'] ?> (<?= formatRupiah($barang['harga']) ?>)</option>
+                    <option value="<?= $barang['id'] ?>" data-harga="<?= $barang['harga'] ?>" data-diskon="<?=$barang['diskon']?>">
+                        <?=$barang['nama']?>(<?= formatRupiah($barang['harga']) ?>) - Diskon : <?=$barang['diskon']?>%
+                    </option>
                     <?php endforeach; ?>
                 </select>
             </div>
@@ -119,5 +125,14 @@ while ($row = $result->fetch_assoc()) {
             </tbody>
         </table>
     </div>
+    <script>
+        document.getElementById('id_barang').addEventListener('change', function() {
+            const selectedOption = this.options[this.selectedIndex];
+            const harga = parseFloat(selectedOption.getAttribute('data-harga'));
+            const diskon = parseFloat(selectedOption.getAttribute('data-diskon'));
+            const $hargaSetelahDiskon = harga - (harga - (diskon / 100));
+            alert('Harga setelah diskon : Rp ${hargaSetelahDiskon.toLocalString()}') ;
+        });
+    </script>
 </body>
 </html>

@@ -34,6 +34,11 @@ function validasiAngka($input) {
     return false;
 }
 
+//Fungsi menghitung harga setelah diskon
+function hitunghargaSetelahDiskon($harga, $diskon) {
+    return $harga = $harga - ($harga * ($diskon / 100));
+}
+
 // Fungsi untuk mendapatkan data barang dari database
 function getDataBarang() {
     $koneksi = koneksiDatabase();
@@ -72,4 +77,6 @@ function hapusBarang($id) {
     }
     $koneksi->close();
 }
+
+
 ?>
