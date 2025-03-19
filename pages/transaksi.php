@@ -78,6 +78,12 @@ while ($row = $result->fetch_assoc()) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Transaksi</title>
     <link rel="stylesheet" href="../assets/css/bootstrap.min.css">
+    <style>
+        body {
+            background: url('../bg.jpg') no-repeat center center fixed;
+            background-size: cover;
+        }
+    </style>
 </head>
 <body>
     <div class="container mt-5">

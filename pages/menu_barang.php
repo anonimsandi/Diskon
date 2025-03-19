@@ -25,6 +25,12 @@ $dataBarang = getDataBarang();
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Menu Barang</title>
     <link rel="stylesheet" href="../assets/css/bootstrap.min.css">
+    <style>
+        body {
+            background: url('../bg.jpg') no-repeat center center fixed;
+            background-size: cover;
+        }
+    </style>
 </head>
 <body>
     <div class="container mt-5">
